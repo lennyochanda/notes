@@ -1,0 +1,64 @@
+#! /bin/bash
+
+# This is a simple script that can be used to save short notes on the terminal using simple commands.
+
+MYSQL=$(which mysql)
+USER=$(whoami)
+
+vacateStale() {
+	$MYSQL notes -u $USER -e "DELETE FROM notes WHERE createdAt < DATE_SUB(NOW, INTERVAL 4 WEEK())" 2> /dev/null
+	if [ $? -eq 0 ]
+	then 
+		echo Succesfully vacated stale notes!
+	else
+		echo Problem vacating stale notes!
+	fi
+}
+
+function addNote {
+	read -p "Enter note (50 chars max):" note
+	date=$(date +%F\ %T.%N)
+	id=$(uuidgen -t)
+	$MYSQL notes -u $USER -e "INSERT INTO notes (id, content, createdAt) VALUES('$id', '$note', '$date')" 2> /dev/null
+	if [ $? -eq 0 ]
+	then 
+		echo Succesfully added note!
+		echo Notes older than 4 weeks will be vacated.
+		# notes delete $id
+		# (crontab -l ; echo "* * * 5 * notes delete $id") | sort - | uniq | crontab -
+	else
+		echo Problem adding note!
+		echo
+		echo Hint: Ensure your note is at most 50 characters long.
+	fi
+}
+
+
+function viewNotes {
+	$MYSQL notes -u $USER -e "SELECT content as Notes FROM notes;"
+	if [ $? -eq 0 ]	
+	then 
+		return  	
+	else
+		echo Problem fetching notes!
+	fi
+
+}
+
+if [ $# -ne 0 ]; then
+	if [ $# -ne 2 ]; then
+		case $1 in
+			add)
+				addNote;;
+			view)
+				viewNotes;;
+		esac
+	else
+		case $1 in
+			delete)
+				vacateStale;;
+		esac
+	fi
+else
+	echo "Usage: notes [add|view]"
+fi

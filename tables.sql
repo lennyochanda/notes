@@ -1,0 +1,12 @@
+CREATE DATABASE IF NOT EXISTS notes;
+
+USE notes;
+
+DROP TABLE IF EXISTS notes;
+
+CREATE TABLE notes (
+    id VARCHAR(36) NOT NULL,
+    note  VARCHAR(50) NOT NULL,
+    createdAt DATETIME NOT NULL,
+    PRIMARY KEY (id)
+);
